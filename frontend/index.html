@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Match Fruits</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <h2 class="wave">
+        <span>F</span><span>r</span><span>u</span><span>i</span><span>t</span><span>y</span>
+        <span> </span>
+        <span>M</span><span>a</span><span>t</span><span>c</span><span>h</span>
+        <span> </span>
+        <span>M</span><span>a</span><span>n</span><span>i</span><span>a</span>
+    </h2>
+    <div id="status-bar">
+        <div id="level">Level: 1</div>
+        <div id="counter">Moves: 0</div>
+        <div id="timer">Time: 0s</div>
+        <div id="score">Score: 0</div>
+        <button id="restartButton" onclick="restartGame()">Restart</button>
+    </div>
+    <div class="card-container" id="cardContainer"></div>
+    <audio id="bgMusic" loop>
+        <source src="audio/background.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+
+    <script src="script.js"></script>
+    <script src="audio.js"></script>
+
+</body>
+
+</html>
