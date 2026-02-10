@@ -201,3 +201,25 @@ button:hover {
         transform: translateY(-12px);
     }
 }
+
+#game-message {
+    margin-top: 20px;
+    padding: 15px;
+    font-size: 1.2rem;
+    text-align: center;
+    border-radius: 8px;
+}
+
+#game-message.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+#game-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.hidden {
+    display: none;
+}
