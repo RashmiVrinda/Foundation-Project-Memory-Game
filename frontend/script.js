@@ -9,7 +9,6 @@ let matchedCount = 0;
 let score = 0;
 let currentLevel = 0;
 
-// levels
 const levels = [
   { level: 1, cardsCount: 3, time: 60 },
   { level: 2, cardsCount: 4, time: 75 },
@@ -18,7 +17,7 @@ const levels = [
 
 let GAME_TIME_LIMIT = levels[currentLevel].time;
 
-// DOM
+// DOM Elements
 const counterDisplay = document.getElementById("counter");
 const timerDisplay = document.getElementById("timer");
 const scoreDisplay = document.getElementById("score");
@@ -26,7 +25,6 @@ const levelDisplay = document.getElementById("level");
 const messageEl = document.getElementById("game-message");
 const container = document.getElementById("cardContainer");
 
-// message helpers
 const showMessage = (text, type = "success") => {
   messageEl.textContent = text;
   messageEl.className = type;
@@ -34,16 +32,19 @@ const showMessage = (text, type = "success") => {
 };
 
 const hideMessage = () => {
-  messageEl.textContent = "";
   messageEl.style.display = "none";
 };
 
-// fetch cards
+// FETCH CARDS FROM SERVER
 const fetchCards = async () => {
   try {
-    const res = await fetch("http://localhost:3000/cards");
+    // Relative path works on both localhost and Render
+    const res = await fetch("/cards"); 
+    if (!res.ok) throw new Error("Server error");
+    
     const allCards = await res.json();
 
+    // Map your database names to Emojis
     const symbolMap = {
       apple: "🍎",
       banana: "🍌",
@@ -58,6 +59,7 @@ const fetchCards = async () => {
 
     cardsData = selectedCards.map((card) => ({
       ...card,
+      // Convert name to lowercase to match the symbolMap keys
       symbol: symbolMap[card.name.toLowerCase()] || "❓",
     }));
 
@@ -66,12 +68,13 @@ const fetchCards = async () => {
 
     restartGame(false);
   } catch (error) {
-    console.error("Failed to fetch cards:", error);
+    console.error("Fetch error:", error);
+    showMessage("Failed to load cards. Ensure server is running on port 3000.", "error");
   }
 };
 
-// render cards
 const renderCards = (cards) => {
+  container.innerHTML = "";
   const duplicatedCards = [...cards, ...cards];
   shuffle(duplicatedCards);
 
@@ -88,22 +91,15 @@ const renderCards = (cards) => {
     `;
 
     card.addEventListener("click", () => {
-      if (
-        gameOver ||
-        flippedCards.length === 2 ||
-        card.classList.contains("flipped") ||
-        card.classList.contains("matched")
-      )
-        return;
+      if (gameOver || flippedCards.length === 2 || card.classList.contains("flipped") || card.classList.contains("matched")) return;
 
       startTimer();
       card.classList.add("flipped");
       flippedCards.push(card);
 
-      moves++;
-      counterDisplay.textContent = `Moves: ${moves}`;
-
       if (flippedCards.length === 2) {
+        moves++;
+        counterDisplay.textContent = `Moves: ${moves}`;
         const [c1, c2] = flippedCards;
 
         if (c1.dataset.id === c2.dataset.id) {
@@ -111,15 +107,10 @@ const renderCards = (cards) => {
             c1.classList.add("matched");
             c2.classList.add("matched");
             matchedCount += 2;
+            score++;
+            scoreDisplay.textContent = `Score: ${score}`;
             flippedCards = [];
-
-            setTimeout(() => {
-              c1.remove();
-              c2.remove();
-              score++;
-              scoreDisplay.textContent = `Score: ${score}`;
-              checkWin();
-            }, 300);
+            checkWin();
           }, 400);
         } else {
           setTimeout(() => {
@@ -130,65 +121,41 @@ const renderCards = (cards) => {
         }
       }
     });
-
     container.appendChild(card);
   });
 };
 
-// timer
 const startTimer = () => {
   if (timerStarted) return;
-
   timerStarted = true;
   timerInterval = setInterval(() => {
     timer++;
     timerDisplay.textContent = `Time: ${timer}s`;
-
-    if (timer >= GAME_TIME_LIMIT) {
-      endGame(false);
-    }
+    if (timer >= GAME_TIME_LIMIT) endGame(false);
   }, 1000);
 };
 
-// win check
 const checkWin = () => {
-  if (matchedCount === cardsData.length * 2) {
-    endGame(true);
+  if (matchedCount === cardsData.length * 2) endGame(true);
+};
+
+const endGame = (won) => {
+  gameOver = true;
+  clearInterval(timerInterval);
+  if (won) {
+    showMessage(`🎉 Level ${levels[currentLevel].level} Complete!`);
+    currentLevel++;
+    if (currentLevel < levels.length) {
+      setTimeout(fetchCards, 2000);
+    } else {
+      showMessage(`🏆 Game Over! Final Score: ${score}`);
+    }
+  } else {
+    showMessage("⏰ Time's up!", "error");
+    setTimeout(() => restartGame(true), 2000);
   }
 };
 
-// end game (FIXED)
-const endGame = (won) => {
-  if (gameOver) return;
-  gameOver = true;
-  clearInterval(timerInterval);
-
-  setTimeout(() => {
-    if (won) {
-      showMessage(`🎉 Level ${levels[currentLevel].level} completed!`);
-
-      currentLevel++;
-
-      if (currentLevel < levels.length) {
-        setTimeout(() => {
-          hideMessage();
-          fetchCards();
-        }, 2000);
-      } else {
-        showMessage(`🏆 You finished all levels! Final score: ${score}`);
-      }
-    } else {
-      showMessage("⏰ Time's up! Restarting game...", "error");
-
-      setTimeout(() => {
-        hideMessage();
-        restartGame(true);
-      }, 2000);
-    }
-  }, 300);
-};
-
-// shuffle
 const shuffle = (array) => {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -196,8 +163,8 @@ const shuffle = (array) => {
   }
 };
 
-// restart
-const restartGame = (resetLevel = true) => {
+const restartGame = (resetAll = true) => {
+  clearInterval(timerInterval);
   container.innerHTML = "";
   moves = 0;
   timer = 0;
@@ -205,21 +172,18 @@ const restartGame = (resetLevel = true) => {
   flippedCards = [];
   gameOver = false;
   timerStarted = false;
-
-  hideMessage();
-
-  if (resetLevel) {
+  
+  if (resetAll) {
     score = 0;
     currentLevel = 0;
+    fetchCards();
+  } else {
+    counterDisplay.textContent = "Moves: 0";
+    timerDisplay.textContent = "Time: 0s";
+    renderCards(cardsData);
   }
-
-  counterDisplay.textContent = "Moves: 0";
-  timerDisplay.textContent = "Time: 0s";
-  scoreDisplay.textContent = `Score: ${score}`;
-  levelDisplay.textContent = `Level: ${levels[currentLevel].level}`;
-
-  renderCards(cardsData);
+  hideMessage();
 };
 
-// init
+// Initial Load
 fetchCards();

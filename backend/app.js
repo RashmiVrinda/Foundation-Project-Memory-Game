@@ -6,22 +6,22 @@ import cardRouter from "./routes/cardRoutes.js";
 
 const app = express();
 
-// Required to handle paths in ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(cors());
 app.use(express.json());
 
-// This tells Express to serve files from the 'frontend' folder
-// We use '../frontend' because your app.js is inside the 'backend' folder
+// 1. Serve static files from the frontend folder
+// We go up one level (..) because app.js is inside the 'backend' folder
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
-// Serve the index.html file when the root URL is accessed
+// 2. The API route for cards
+app.use("/cards", cardRouter);
+
+// 3. Serve the index.html for the root URL
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "frontend", "index.html"));
 });
-
-app.use("/cards/", cardRouter);
 
 export default app;
